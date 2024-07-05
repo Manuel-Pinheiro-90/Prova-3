@@ -1,0 +1,202 @@
+TABELLE--------------------------------------------------------------------------------------
+
+
+CREATE TABLE [dbo].ANAGRAFICA
+(
+IdAnagrafica INT PRIMARY KEY IDENTITY,
+Cognome NVARCHAR(50) NOT NULL,
+Nome NVARCHAR(50) NOT NULL,
+Indirizzo NVARCHAR(100) NOT NULL,
+Città NVARCHAR(50) NOT NULL,
+CAP NCHAR(10) NOT NULL,
+Cod_Fisc NCHAR (16) NOT NULL
+	
+)
+----------------------------------------------------------------------------------------
+
+
+CREATE TABLE [dbo].TIPO_VIOLAZIONE
+(
+	IdViolazione int IDENTITY PRIMARY KEY,
+	Descrizione NVARCHAR (260)
+
+)
+-----------------------------------------------------------------------------------------
+
+
+CREATE TABLE [dbo].VERBALE
+( 
+	IdVerbale INT NOT NULL PRIMARY KEY IDENTITY,
+	 DataViolazione DATE,
+    IndirizzoViolazione NVARCHAR(100),
+    Nominativo_Agente NVARCHAR(50),
+    DataTrascrizioneVerbale DATE,
+    Importo MONEY,
+    DecurtamentoPunti INT,
+    IdAnagrafica INT,
+    IdViolazione INT,
+
+	CONSTRAINT FK_ANAGRAFICA FOREIGN KEY (IdAnagrafica) REFERENCES ANAGRAFICA(IdAnagrafica),
+	 CONSTRAINT FK_TIPO_VIOLAZIONE FOREIGN KEY (IdViolazione) REFERENCES TIPO_VIOLAZIONE(IdViolazione)
+)
+------------------------------------------------------------------------------------------------
+
+POPOLAMENTO CAMPI TABELLE TRAMITE QUERY
+
+
+INSERT INTO ANAGRAFICA (Cognome, Nome, Indirizzo, Città, CAP, Cod_Fisc) VALUES
+('Rossi', 'Mario', 'Via Roma 1', 'Palermo', '90100', 'RSSMRA80A01H501Z'),
+('Bianchi', 'Luigi', 'Via Milano 5', 'Milano', '20100', 'BNCLGU85B02F205X'),
+('Verdi', 'Anna', 'Via Napoli 7', 'Napoli', '80100', 'VRDANN70C03G305Y');
+
+------------------------------------------------------------------------------
+
+INSERT INTO TIPO_VIOLAZIONE (Descrizione) VALUES
+('Eccesso di velocità'),
+('Sosta vietata'),
+('Guida in stato di ebbrezza'),
+('Dirottamento di nave Aerospaziale'),
+('ribellione contro impero galattico');
+
+---------------------------------------------------------------------------------
+INSERT INTO VERBALE (DataViolazione, IndirizzoViolazione, Nominativo_Agente, DataTrascrizioneVerbale, Importo, DecurtamentoPunti, IdAnagrafica, IdViolazione) VALUES
+('2024-01-15', 'Via Roma 10', 'Agente1', '2024-01-16', 150.00, 2, 1, 1),
+('2024-02-20', 'Via Milano 20', 'Agente2', '2024-02-21', 300.00, 4, 2, 2),
+('2024-03-25', 'Via Tatooen 30', 'Inquisitore Imperiale', '2024-03-26', 450.00, 6, 3, 5);
+
+
+----------------------------------------------------------------------------------------------------------------------------
+
+QUERY RICHIESTE DAGLI ESERCIZZI
+
+
+
+-- 1 conteggio verbali trascritti
+
+SELECT COUNT (*) AS [verbali trascritti]
+FROM VERBALE
+
+
+
+
+-- 2 conteggio dei verbali raggruppati per anagrafe
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, COUNT (VERBALE.IdVerbale) AS [Conteggio verbali]
+FROM VERBALE
+JOIN ANAGRAFICA ON VERBALE.IdAnagrafica =ANAGRAFICA.IdAnagrafica
+GROUP BY ANAGRAFICA.Cognome, ANAGRAFICA.Nome;
+
+
+
+
+-- 3 Conteggio dei verbali trascritti raggruppati per tipo di violazione
+
+SELECT TIPO_VIOLAZIONE.Descrizione, COUNT(VERBALE.IdVerbale) AS [Conto verbali]
+
+FROM VERBALE
+JOIN TIPO_VIOLAZIONE ON VERBALE.IdViolazione = TIPO_VIOLAZIONE.IdViolazione
+GROUP BY TIPO_VIOLAZIONE.Descrizione;
+
+
+
+-- 4 Totale dei punti decurtati per ogni anagrafe
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, SUM (VERBALE.DecurtamentoPunti) AS [totale punti decurtati]
+FROM VERBALE
+JOIN ANAGRAFICA ON VERBALE.IdAnagrafica = ANAGRAFICA.IdAnagrafica
+GROUP BY ANAGRAFICA.Cognome,ANAGRAFICA.Nome;
+
+
+
+
+-- 5 Cognome, Nome, Data violazione, Indirizzo violazione, importo e punti decurtati per tutti gli anagrafici residenti a Palermo
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, VERBALE.DataViolazione, VERBALE.IndirizzoViolazione, VERBALE.Importo, VERBALE.DecurtamentoPunti 
+FROM VERBALE
+JOIN ANAGRAFICA ON  VERBALE.IdAnagrafica = ANAGRAFICA.IdAnagrafica
+where ANAGRAFICA.città = 'palermo';
+
+
+
+
+
+--6 Cognome, Nome, Indirizzo, Data violazione, importo e punti decurtati per le violazioni fatte tra il febbraio 2009 e luglio 2009 
+
+SELECT.ANAGRAFICA.Cognome, ANAGRAFICA.Nome, ANAGRAFICA.Indirizzo , V.DataViolazione, V.Importo, V.DecurtamentoPunti
+FROM VERBALE AS V
+JOIN ANAGRAFICA  ON V.IdAnagrafica = ANAGRAFICA.IdAnagrafica
+-- WHERE V.DataViolazione BETWEEN '2009-02-01' AND '2009-07-31';
+--esempio che restituisce risultato usando i valori da me impostati
+WHERE V.DataViolazione BETWEEN '15/01/2024' AND '20/02/2024';
+
+
+
+
+
+-- 7  Totale degli importi per ogni anagrafico
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, SUM(VERBALE.Importo) AS [Totale importi]
+FROM VERBALE
+JOIN ANAGRAFICA ON VERBALE.IdAnagrafica = ANAGRAFICA.IdAnagrafica
+GROUP BY ANAGRAFICA.Cognome, ANAGRAFICA.Nome;
+
+
+
+
+
+-- 8  Visualizzazione di tutti gli anagrafici residenti a Palermo
+
+SELECT *
+FROM ANAGRAFICA
+WHERE Città = 'Palermo';
+
+
+
+
+
+
+-- 9 Query che visualizzi Data violazione, Importo e decurtamento punti relativi ad una certa data
+
+SELECT DataViolazione, Importo, DecurtamentoPunti
+FROM VERBALE
+WHERE DataViolazione = '2024-01-15'
+
+
+
+
+
+
+-- 10 Conteggio delle violazioni contestate raggruppate per Nominativo dell’agente di Polizia
+
+SELECT Nominativo_Agente, COUNT(*) AS ConteggioViolazioni
+FROM VERBALE
+GROUP BY Nominativo_Agente;
+
+
+
+
+
+-- 11 Cognome, Nome, Indirizzo, Data violazione, Importo e punti decurtati per tutte le violazioni che superino il decurtamento di 5 punti
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, ANAGRAFICA.Indirizzo, VERBALE.DataViolazione, VERBALE.Importo, VERBALE.DecurtamentoPunti
+FROM VERBALE
+JOIN ANAGRAFICA ON VERBALE.idanagrafica = ANAGRAFICA.idanagrafica
+WHERE VERBALE.DecurtamentoPunti > 5;
+
+
+
+
+
+-- 12 Cognome, Nome, Indirizzo, Data violazione, Importo e punti decurtati per tutte le violazioni che superino l’importo di 400 euro. 
+
+SELECT ANAGRAFICA.Cognome, ANAGRAFICA.Nome, ANAGRAFICA.Indirizzo, VERBALE.DataViolazione, VERBALE.Importo, VERBALE.DecurtamentoPunti
+FROM VERBALE
+JOIN ANAGRAFICA ON VERBALE.idanagrafica = ANAGRAFICA.idanagrafica
+WHERE VERBALE.Importo > 400
+
+
+
+
+
+
+
